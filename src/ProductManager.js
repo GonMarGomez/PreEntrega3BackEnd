@@ -1,3 +1,4 @@
+import e from 'express';
 import fs from 'fs'
 export default class ProductManager {
   constructor(path) {
@@ -5,16 +6,16 @@ export default class ProductManager {
     this.id = 0;
     this.products = []
   }
-  addProduct(title, description, price, thumbnail, code, stock) {
-    let cod = this.products.map(i => i.code)
+  addProduct(prod) {
+  let cod = this.products.map(i => i.code)
     const productoNuevo = {
       id: ++this.id,
-      title: (() => { if (!title) { throw "Error: El producto no tiene titulo" } return title })(),
-      description: (() => { if (!description) { throw "Error: El producto no tiene descripcion" } return description })(),
-      price: (() => { if (!price) { throw "Error: El procuto no tiene precio" } return price })(),
-      thumbnail: (() => { if (!thumbnail) { throw "Error: El procuto no tiene imagen" } return thumbnail })(),
-      code: (() => { if (!code || cod.includes(code)) { throw "Error al agregar codigo al producto" } return code })(),
-      stock: (() => { if (!stock || stock <= 0) { throw "Error: Se debe agreegar el stock del procuto, el stock no puede ser menor que uno" } return stock })()
+      title: (() => { if (!prod.title) { throw "Error: El producto no tiene titulo" } return prod.title })(),
+      description: (() => { if (!prod.description) { throw "Error: El producto no tiene descripcion" } return prod.description })(),
+      price: (() => { if (!prod.price) { throw "Error: El procuto no tiene precio" } return prod.price })(),
+      thumbnail: (() => { if (!prod.thumbnail) { throw "Error: El procuto no tiene imagen" } return prod.thumbnail })(),
+      code: (() => { if (!prod.code || cod.includes(prod.code)) { throw "Error al agregar codigo al producto" } return prod.code })(),
+      stock: (() => { if (!prod.stock || prod.stock <= 0) { throw "Error: Se debe agreegar el stock del procuto, el stock no puede ser menor que uno" } return prod.stock })()
 
     }
     this.products.push(productoNuevo)
@@ -80,5 +81,4 @@ async getProducts() {
     }
   }
 };
-
 
