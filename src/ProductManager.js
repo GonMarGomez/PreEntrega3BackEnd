@@ -1,4 +1,3 @@
-import e from 'express';
 import fs from 'fs'
 export default class ProductManager {
   constructor(path) {
@@ -6,22 +5,30 @@ export default class ProductManager {
     this.id = 0;
     this.products = []
   }
-  addProduct(prod) {
-  let cod = this.products.map(i => i.code)
+ async addProduct(prod) {
+    const existingProduct = this.products.find((product) => product.code === prod.code);
+  const lastProductId = this.products.length > 0 ? this.products[this.products.length - 1].id : 0;
     const productoNuevo = {
-      id: ++this.id,
+      id: lastProductId + 1,
+      status: true,
       title: (() => { if (!prod.title) { throw "Error: El producto no tiene titulo" } return prod.title })(),
       description: (() => { if (!prod.description) { throw "Error: El producto no tiene descripcion" } return prod.description })(),
       price: (() => { if (!prod.price) { throw "Error: El procuto no tiene precio" } return prod.price })(),
       thumbnail: (() => { if (!prod.thumbnail) { throw "Error: El procuto no tiene imagen" } return prod.thumbnail })(),
-      code: (() => { if (!prod.code || cod.includes(prod.code)) { throw "Error al agregar codigo al producto" } return prod.code })(),
-      stock: (() => { if (!prod.stock || prod.stock <= 0) { throw "Error: Se debe agreegar el stock del procuto, el stock no puede ser menor que uno" } return prod.stock })()
-
+      code: (() => { if (!prod.code || existingProduct) {throw "Error al agregar codigo al producto"} return prod.code })(),
+      stock: (() => { if (!prod.stock || prod.stock <= 0) { throw "Error: Se debe agreegar el stock del procuto, el stock no puede ser menor que uno" } return prod.stock })(),
+      category: (() => { if (!prod.category) { throw "Error: El procuto no tiene category" } return prod.category })(),
     }
     this.products.push(productoNuevo)
-    fs.writeFileSync(this.path, JSON.stringify(this.products, null,), error => {
+    console.log(this.products);
+    try{
+     await fs.promises.writeFile(this.path, JSON.stringify(this.products, null,), error => {
       console.log(error);
-    })
+    })}
+    catch(error){
+      console.error(error);
+    }
+    
   }
 async getProducts() {    
           try {
@@ -53,31 +60,52 @@ async getProducts() {
     }
    
   }
-  async updateProduct(id, actualizacion, valor) {
-    try {
-        const data = await fs.promises.readFile(this.path, {encoding: "utf8"});
-        const products = JSON.parse(data);
-        const productToUpdate = products.find((product) => product.id === id);
-        if (productToUpdate) {
-            productToUpdate[actualizacion] = valor;
-            await fs.promises.writeFile(this.path, JSON.stringify(products));
-            console.log("Producto actualizado");
-        } else {
-            console.error("Producto no encontrado");
+  async updateProduct(id, product) {
+    const products = await this.getProducts();
+    let productUpdated = {};
+
+    for (let key in products) {
+        if (products[key].id == id) {
+          products[key].title = product.title ? product.title : products[key].title;
+          products[key].description = product.description ? product.description : products[key].description;
+          products[key].price = product.price ? parseInt(product.price) : products[key].price;
+          products[key].code = product.code ? product.code : products[key].code;
+          products[key].stock = product.stock ? parseInt(product.stock) : products[key].stock;
+          products[key].category = product.category ? product.category : products[key].category;
+          if (Array.isArray(product.thumbnails)) {
+            products[key].thumbnails = product.thumbnails;
+          } else if (product.thumbnails) {
+            products[key].thumbnails = [product.thumbnails];
+          } else {
+            products[key].thumbnails = [];
+          }
+          if (product.status !== undefined) {
+            products[key].status = typeof product.status === 'string' ? product.status === 'true' : Boolean(product.status);
+          }
+
+          productUpdated = products[key];
         }
-    } catch (error) {
-        console.error(`Ocurrió un problema al intentar actualizar el producto ${id}`, error);
     }
-}
+
+    try {
+        await fs.promises.writeFile(this.path, JSON.stringify(products, null, "\t"));
+        return productUpdated;
+    } catch(e) {
+        return {
+            message: "Error al actualizar usuario!"
+        };
+    }
+  }
  async deleteProduct(id) {
     const data = await fs.promises.readFile(this.path, 'utf8');
     const products = JSON.parse(data);
-    if (this.getProductById(id)) {
+    let checkProd = products.find(product => product.id === id)
+    if (checkProd) {
       let newProducts = products.filter((products) => products.id !== id);
      await fs.promises.writeFile(this.path, JSON.stringify(newProducts));
       return newProducts
     } else {
-      console.error('Producto no encontrado');
+      throw "Error: Producto no encontrado"
     }
   }
 };

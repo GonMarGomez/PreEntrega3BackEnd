@@ -1,6 +1,6 @@
 import express from 'express'
-import routerCart from './carts/carts.js'
-import routerProducts from './products/products.js'
+import routerCart from './routes/carts/carts.js'
+import routerProducts from './routes/products/products.js'
 
 
 const app = express();
@@ -10,7 +10,7 @@ app.use(express.json())
 
 
 app.use('/api/products',routerProducts)
-app.use('/api/cart',routerCart)
+app.use('/api/carts', routerCart)
 
 
 app.listen(PORT, () => {
